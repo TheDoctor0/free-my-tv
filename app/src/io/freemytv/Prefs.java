@@ -183,13 +183,13 @@ final class Prefs {
 
     // MARK: - Widgets and coins
 
-    static boolean weather() { return sp().getBoolean("weather", Config.SHOW_WEATHER); }
+    static boolean weather() { return Config.SHOW_WEATHER && sp().getBoolean("weather", true); }
     static void setWeather(boolean on) { put("weather", on); }
     /** The weather card's forecast: "hours" (the next 6 hours) or "days" (the next 5 days). */
     static String forecast() { return "days".equals(sp().getString("forecast", "hours")) ? "days" : "hours"; }
     static void setForecast(String v) { put("forecast", v); }
 
-    static boolean quotes() { return sp().getBoolean("quotes", Config.SHOW_CRYPTO); }
+    static boolean quotes() { return Config.SHOW_CRYPTO && sp().getBoolean("quotes", true); }
     static void setQuotes(boolean on) { put("quotes", on); }
 
     /** Your photos (Photos, sent from a computer) on the screensaver and behind the home screen, once imported. */

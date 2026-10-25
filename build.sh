@@ -54,6 +54,14 @@ fi
 ASSIST=false; [ "$(prop disable_assistant false)" = "true" ] && ASSIST=true
 CRYPTO=false; [ "$(prop show_crypto true)" = "true" ] && CRYPTO=true
 WEATHER=false; [ "$(prop show_weather true)" = "true" ] && WEATHER=true
+# night_from / night_to (HH:MM): when the theme turns dark and light again without the weather's sunset and sunrise.
+minutes() {
+  local v; v="$(prop "$1" "$2")"
+  [[ "$v" =~ ^([01]?[0-9]|2[0-3]):([0-5][0-9])$ ]] || { echo "config.properties: $1 must be HH:MM (got \"$v\")" >&2; exit 1; }
+  printf '%s' "$((10#${BASH_REMATCH[1]} * 60 + 10#${BASH_REMATCH[2]}))"
+}
+NIGHT_FROM="$(minutes night_from 18:00)"
+NIGHT_TO="$(minutes night_to 6:00)"
 ANIMATION=false; [ "$(prop hide_animation false)" = "true" ] && ANIMATION=true
 
 rm -rf out && mkdir -p out/gen/io/freemytv out/classes
@@ -78,6 +86,7 @@ final class Config {
     static final boolean DISABLE_ASSISTANT = $ASSIST;
     static final boolean SHOW_CRYPTO = $CRYPTO;
     static final boolean SHOW_WEATHER = $WEATHER;
+    static final int NIGHT_FROM = $NIGHT_FROM, NIGHT_TO = $NIGHT_TO;   // minutes after midnight
     static final boolean HIDE_ANIMATION = $ANIMATION;
 }
 EOF

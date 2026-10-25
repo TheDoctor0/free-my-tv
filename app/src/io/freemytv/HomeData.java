@@ -215,7 +215,7 @@ final class HomeData {
             });
         }
         boolean moved = !weatherPlace().equals(weatherFor);
-        // Weather off in Home Settings: nothing is asked of Open-Meteo (the theme then turns dark from 18:00 to 6:00).
+        // Weather off: nothing is asked of Open-Meteo (the theme then follows night_from and night_to).
         if (Prefs.weather() && !fetchingWeather && (moved || now - weatherAt > WEATHER_EVERY || now < weatherAt)
                 && !failedRecently(weatherFailedAt, now)) {
             fetchingWeather = true;
@@ -372,10 +372,12 @@ final class HomeData {
     static boolean isNight(String theme, long now, long sunrise, long sunset) {
         if (theme.equals("dark")) return true;
         if (theme.equals("light")) return false;
+        if (!Prefs.weather()) sunrise = sunset = 0;   // weather off: a cached forecast's times would only get older
         long t = Shaders.timeOfDay(now, 0);
-        long rise = Shaders.timeOfDay(sunrise, 6 * 60 * 60_000L);
-        long set = Shaders.timeOfDay(sunset, 18 * 60 * 60_000L);
-        return t < rise || t >= set;
+        long rise = Shaders.timeOfDay(sunrise, Config.NIGHT_TO * 60_000L);
+        long set = Shaders.timeOfDay(sunset, Config.NIGHT_FROM * 60_000L);
+        if (rise == set) return false;   // no night at all
+        return rise < set ? t < rise || t >= set : t >= set && t < rise;   // night across midnight, or within one day
     }
 
     // MARK: - Formatting

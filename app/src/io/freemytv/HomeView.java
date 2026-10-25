@@ -576,7 +576,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         lightButtons.addAll(list);
         if (zone == Z_TOP && topIndex >= 3 + lightButtons.size()) {
             topIndex = 2 + lightButtons.size();
-            if (topIndex < 3 && !picksOn()) zone = Z_SHELF;   // without the picks the tabs can't hold focus
+            if (topIndex < 3 && !picksMode()) zone = Z_SHELF;   // without the picks the tabs can't hold focus
             else if (topIndex < 3) selectTab(topIndex);
             retarget(true);
         }
@@ -626,7 +626,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         measure(drawerLayer, width, Math.round(600 * kk));
         measure(sheetLayer, width, height);
         measure(menuLayer, width, height);
-        measure(toastLayer, Math.round(1000 * kk), Math.round(220 * kk));
+        measure(toastLayer, width, Math.round(220 * kk));   // full width: next to a long title, the toast moves right
         setMeasuredDimension(width, height);
     }
 
@@ -647,7 +647,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         menuLayer.layout(0, 0, width, height);
         sheetLayer.setPivotX(width / 2f);
         sheetLayer.setPivotY(height / 2f);
-        place(toastLayer, (width - toastLayer.getMeasuredWidth()) / 2, 0);
+        place(toastLayer, 0, 0);
     }
 
     private static void place(View v, int x, int y) {
@@ -3081,9 +3081,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     /** The three cards of the current tab (Explore, Movies, Shows) and the background taken from the first one. */
     private void updateCards() {
         if (!picksMode()) {
-            // No picks on screen: no cards, and the plain gradient behind.
+            // No picks on screen: no cards; behind the clock your photo if there is one, else (and behind Continue
+            // Watching, which tints the background with its cards) the plain gradient.
             if (!cards.isEmpty()) cards = new ArrayList<>();
-            showBackdrop(null);
+            Backdrop own = clockMode() && Photos.on(getContext()) ? Photos.backdrop(getContext(), ownReady) : null;
+            if (own != null || !clockMode() || !Photos.on(getContext())) showBackdrop(own);
             heroDirty = true;
             return;
         }
@@ -3340,8 +3342,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (pkg == null || pkg.isEmpty() || pkg.equals(HomeMode.PKG)) return null;
         Intent intent;
         try {
-            intent = uri.startsWith("intent:") ? Intent.parseUri(uri, Intent.URI_INTENT_SCHEME)
-                    : new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri));
+            intent = Intent.parseUri(uri, Intent.URI_INTENT_SCHEME);   // also plain addresses: a VIEW of them
         } catch (java.net.URISyntaxException | RuntimeException e) {   // a bad launchFlags= throws NumberFormatException
             AppLog.w("continue watching link: " + e.getMessage());
             return null;
@@ -3647,7 +3648,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
      * follows the tint: no images to fill on every move.
      */
     private void easeGlass() {
-        if (bgTo != null || bgFadeAt != 0 || Build.VERSION.SDK_INT < 33) return;
+        if (bgTo != null || bgFadeAt != 0 || Build.VERSION.SDK_INT < 33 || !scene.shaded()) return;
         if (tintGlassPx == null) tintGlassPx = new int[Backdrop.GW * Backdrop.GH];
         plainImage(neutralGlassPx, Backdrop.GW, Backdrop.GH, tintFrom);
         plainImage(tintGlassPx, Backdrop.GW, Backdrop.GH, tintTo);

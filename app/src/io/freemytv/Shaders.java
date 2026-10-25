@@ -301,7 +301,8 @@ final class Shaders {
 
     /**
      * Palette for the sun's current position at your location. Uses the sunrise and sunset times from the last weather
-     * fetch (they shift ~1 min a day, so yesterday's times are fine today); without data, 5:30 and 17:40.
+     * fetch (they shift ~1 min a day, so yesterday's times are fine today); without data, night_to and night_from
+     * (config.properties): the night sky ends at the first and is back by the second, as the dark theme does.
      */
     static void sky(Palette out, long now, long sunrise, long sunset) {
         java.util.Calendar cal = java.util.Calendar.getInstance();
@@ -311,22 +312,24 @@ final class Shaders {
         cal.set(java.util.Calendar.SECOND, 0);
         cal.set(java.util.Calendar.MILLISECOND, 0);
         long midnight = cal.getTimeInMillis();
-        long rise = midnight + timeOfDay(sunrise, (5 * 60 + 30) * 60_000L);
-        long set = midnight + timeOfDay(sunset, (17 * 60 + 40) * 60_000L);
-        long m = 60_000L;
+        if (!Prefs.weather()) sunrise = sunset = 0;   // weather off: a cached forecast's times would only get older
+        long day = 24 * 60 * 60_000L, m = 60_000L;
+        long rise = midnight + timeOfDay(sunrise, Config.NIGHT_TO * m + 60 * m);
+        long set = midnight + timeOfDay(sunset, Config.NIGHT_FROM * m - 105 * m);
+        // night_from at or before night_to (00:30 to 6:00): the evening belongs to the day before the morning.
+        while (set + 105 * m <= rise - 60 * m) set += day;
         long[] at = {rise - 60 * m, rise - 15 * m, rise + 45 * m, set - 45 * m, set, set + 45 * m, set + 105 * m};
         int[][] key = {NIGHT, DAWN, DAY, DAY, SUNSET, DUSK, NIGHT};
-        if (now <= at[0] || now >= at[at.length - 1]) {
-            out.set(NIGHT[0], NIGHT[1], NIGHT[2]);
-            return;
-        }
-        for (int i = 0; i < at.length - 1; i++) {
-            if (now >= at[i] && now < at[i + 1]) {
-                float f = (float) (now - at[i]) / (at[i + 1] - at[i]);
-                out.set(mix(key[i][0], key[i + 1][0], f), mix(key[i][1], key[i + 1][1], f), mix(key[i][2], key[i + 1][2], f));
-                return;
+        for (long t : new long[] {now, now + day, now - day}) {   // the day's phases can run past midnight
+            for (int i = 0; i < at.length - 1; i++) {
+                if (t >= at[i] && t < at[i + 1]) {
+                    float f = (float) (t - at[i]) / (at[i + 1] - at[i]);
+                    out.set(mix(key[i][0], key[i + 1][0], f), mix(key[i][1], key[i + 1][1], f), mix(key[i][2], key[i + 1][2], f));
+                    return;
+                }
             }
         }
+        out.set(NIGHT[0], NIGHT[1], NIGHT[2]);
     }
 
     /** Time of day (ms since local midnight) of an instant; `fallback` if there is no data. */
