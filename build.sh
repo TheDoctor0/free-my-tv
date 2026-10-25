@@ -54,6 +54,7 @@ fi
 ASSIST=false; [ "$(prop disable_assistant false)" = "true" ] && ASSIST=true
 CRYPTO=false; [ "$(prop show_crypto true)" = "true" ] && CRYPTO=true
 WEATHER=false; [ "$(prop show_weather true)" = "true" ] && WEATHER=true
+KEEP_DREAM=false; [ "$(prop keep_screensaver false)" = "true" ] && KEEP_DREAM=true
 # night_from / night_to (HH:MM): when the theme turns dark and light again without the weather's sunset and sunrise.
 minutes() {
   local v; v="$(prop "$1" "$2")"
@@ -86,6 +87,7 @@ final class Config {
     static final boolean DISABLE_ASSISTANT = $ASSIST;
     static final boolean SHOW_CRYPTO = $CRYPTO;
     static final boolean SHOW_WEATHER = $WEATHER;
+    static final boolean KEEP_SCREENSAVER = $KEEP_DREAM;
     static final int NIGHT_FROM = $NIGHT_FROM, NIGHT_TO = $NIGHT_TO;   // minutes after midnight
     static final boolean HIDE_ANIMATION = $ANIMATION;
 }
