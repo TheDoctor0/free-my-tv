@@ -215,7 +215,9 @@ final class HomeData {
             });
         }
         boolean moved = !weatherPlace().equals(weatherFor);
-        if (!fetchingWeather && (moved || now - weatherAt > WEATHER_EVERY || now < weatherAt) && !failedRecently(weatherFailedAt, now)) {
+        // Weather off in Home Settings: nothing is asked of Open-Meteo (the theme then turns dark from 18:00 to 6:00).
+        if (Prefs.weather() && !fetchingWeather && (moved || now - weatherAt > WEATHER_EVERY || now < weatherAt)
+                && !failedRecently(weatherFailedAt, now)) {
             fetchingWeather = true;
             io.execute(() -> {
                 try {
